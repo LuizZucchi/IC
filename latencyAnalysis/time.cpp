@@ -1,6 +1,9 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+
+size_t NUM_READS = 4000;
+
 //mede o começo do tempo
 uint64_t rdtsc_in() {
     uint64_t a, d;
