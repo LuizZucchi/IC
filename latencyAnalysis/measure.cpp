@@ -121,16 +121,16 @@ int main() {
         std::set <addrpair> used_addr;
         used_addr.clear();
         while(--tries_left) {
-            time_start = rdtsc_in();
             auto pool_front = addr_pool.begin();
             std::advance(pool_front, rand()%addr_pool.size());
             addr_a = pool_front->first;
             a_phys = pool_front->second;
             t = get_timing(base, addr_a);
-            times[time_ptr] = rdtsc_out() - time_start;
+            times[time_ptr] = t;
             printf(">>%d\n", times[time_ptr]);
             time_ptr++;
         }
+        sets_found++;
     }
     for (size_t i; i < 1000; i++) {
         std::cout<< times[i] << "\n"; 
