@@ -25,6 +25,7 @@
 
 #include "measure.h"
 
+#define HIST_SIZE 1500
 // GLOBAL SETTINGS
 
 size_t num_reads = 4000;
@@ -85,12 +86,29 @@ void getRandom(pointer *virtual_address, pointer *physical_address) {
     *physical_address = getPhysicalAddress(*virtual_address);
 }
 
+int findThreshold(size_t *hist, int min, int max) { //refactor for just one return
+    int flag = 0;
+    for (int i = max; i >= min; i--) {
+        if (flag == 20) {
+            return i;//bad, bad practice =(
+        }
+        if (hist[i] == 0 || hist[i] <= 1) {
+            flag++;
+        } else {
+            flag = 0;
+        }
+    }
+    return 0;
+}
+
+
 int main() {
     size_t sets_found = 0;
+    size_t hist[HIST_SIZE];
 
     std::set <addrpair> addr_pool;
     std::map<int, std::list<addrpair> > timing;
-    
+    std::map<int, std::list<addrpair> >::iterator it = timing.begin();
     srand(time(NULL));
     initPagemap();
     createMap();
@@ -103,7 +121,7 @@ int main() {
 
     getRandom(&base, &phys_base);
     
-    long times[1000], time_start;
+    long times[1000] = {0}, time_start;
     int time_ptr = 0;
     int time_valid = 0;
     int t;
@@ -112,6 +130,7 @@ int main() {
         getRandom(&addr_b, &b_phys);
         addr_pool.insert(std::make_pair(addr_b, b_phys));
     }
+    
     setpriority(PRIO_PROCESS, 0, -20);
 
     int aux, tries_left;
@@ -127,13 +146,50 @@ int main() {
             a_phys = pool_front->second;
             t = get_timing(base, addr_a);
             times[time_ptr] = t;
-            printf(">>%d\n", times[time_ptr]);
+            timing[t].push_back(std::make_pair(base, a_phys));
+            //printf(">>%d\n", times[time_ptr]);
             time_ptr++;
         }
         sets_found++;
     }
-    for (size_t i; i < 1000; i++) {
+    /*for (size_t i; i < 1000; i++) {
         std::cout<< times[i] << "\n"; 
+    }*/
+
+    std::vector <pointer> new_set;// set of addr that maybe are in the same bank
+    std::map < int, std::list < addrpair > > ::iterator hit;
+    
+    int min = HIST_SIZE;
+    int max = 0;
+    int max_v = 0;
+
+    for (hit = timing.begin(); hit != timing.end(); hit++) {
+        hist[hit->first] = hit->second.size();
+        if (hit->first > max) {
+            max = hit->first;
+        }
+        if (hit->first < min) {
+            min = hit->first;
+        }
+        if (hit->second.size() > max_v) {
+            max_v = hit->second.size();
+        }
     }
+
+    double scale_v = (double)(100.0)/(max_v > 0 ? (double) max_v : 100.0);
+
+    assert(scale_v >= 0);
+    while(hist[++min] <= 1);
+    while(hist[--max] <= 1);
+
+    for (size_t i = min; i <= max; i++) {
+        printf("%u: %u", i, hist[i]);
+        assert(hist[i] >= 0);
+        for (size_t j = 0; j < hist[i]*scale_v && j < 80; j++) {
+            printf("+");
+        }
+        printf("\n");
+    }
+    printf("there is a threshold in: %d\n", findThreshold(hist, min, max));
 }
-//slide A7
+// use the thresold to form a set
