@@ -29,7 +29,7 @@
 // GLOBAL SETTINGS
 
 size_t num_reads = 4000;
-double mem_fract = 0.1;
+double mem_fract = 0.6;
 size_t expected_sets = 1;
 void *map;
 
@@ -104,7 +104,6 @@ int findThreshold(size_t *hist, int min, int max) { //refactor for just one retu
 
 int main() {
     size_t sets_found = 0;
-    size_t hist[HIST_SIZE];
 
     std::set <addrpair> addr_pool;
     std::map<int, std::list<addrpair> > timing;
@@ -162,6 +161,7 @@ int main() {
     int min = HIST_SIZE;
     int max = 0;
     int max_v = 0;
+    size_t hist[HIST_SIZE] = {0};
 
     for (hit = timing.begin(); hit != timing.end(); hit++) {
         hist[hit->first] = hit->second.size();
@@ -192,4 +192,4 @@ int main() {
     }
     printf("there is a threshold in: %d\n", findThreshold(hist, min, max));
 }
-// use the thresold to form a set
+// use the threshold to form a set
